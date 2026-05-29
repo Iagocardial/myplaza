@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber'
 import { OrthographicCamera, ContactShadows } from '@react-three/drei'
 import { useLayoutEffect, useRef } from 'react'
 import * as THREE from 'three'
+import { COUCH_POS } from '@/seat'
 
 const C = {
   brick: '#c8775a', brickDark: '#a35a3f', mortar: '#7a3f2c',
@@ -20,6 +21,7 @@ const C = {
   white: '#ffffff', coffee: '#3b1f10', milk: '#fff5e0',
   warmLight: '#ffcd80', door: '#5b3a2e', metalBlack: '#222',
   signCream: '#fbeac4', signText: '#3a2014',
+  couchBody: '#6d3a2a', couchCushion: '#b85a3c', couchPiping: '#3a1e14',
 }
 
 const Box = ({ size = [1, 1, 1], color, ...rest }) => (
@@ -62,38 +64,10 @@ export function Lights() {
 
 function Floor() {
   return (
-    <group>
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
-        <planeGeometry args={[40, 30]} />
-        <meshStandardMaterial color={C.street} roughness={1} />
-      </mesh>
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.005, 0]}>
-        <planeGeometry args={[18, 10]} />
-        <meshStandardMaterial color={C.sidewalk} roughness={1} />
-      </mesh>
-      {[-6, -3, 0, 3, 6].map((x) => (
-        <mesh key={`v${x}`} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.001, 0]}>
-          <planeGeometry args={[0.04, 10]} />
-          <meshBasicMaterial color={C.sidewalkLine} />
-        </mesh>
-      ))}
-      {[-3, 0, 3].map((z) => (
-        <mesh key={`h${z}`} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, z]}>
-          <planeGeometry args={[18, 0.04]} />
-          <meshBasicMaterial color={C.sidewalkLine} />
-        </mesh>
-      ))}
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
-        <planeGeometry args={[8, 5]} />
-        <meshStandardMaterial color={C.woodFloor} roughness={0.7} />
-      </mesh>
-      {[-1.8, -1.2, -0.6, 0, 0.6, 1.2, 1.8].map((z) => (
-        <mesh key={z} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, z]}>
-          <planeGeometry args={[8, 0.025]} />
-          <meshBasicMaterial color={C.woodDark} />
-        </mesh>
-      ))}
-    </group>
+    <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+      <planeGeometry args={[18, 12]} />
+      <meshStandardMaterial color={C.woodFloor} roughness={0.7} />
+    </mesh>
   )
 }
 
@@ -441,31 +415,42 @@ function Bicycle({ position = [-4.5, 0, 3.5] }) {
   )
 }
 
-export function Scene({ showFrontWall = true } = {}) {
+function Couch() {
+  // Footprint matches COUCH_BOX in @/seat: X [-1.1, 1.1], Z [-0.55, 0.35].
+  // Seat surface around y ≈ SEAT_HEIGHT (0.45).
+  return (
+    <group position={[COUCH_POS.x, 0, COUCH_POS.z]}>
+      {/* base / frame */}
+      <Box size={[2.20, 0.40, 0.90]} position={[0, 0.20, -0.10]} color={C.couchBody} />
+      {/* seat cushions */}
+      <Box size={[0.62, 0.12, 0.70]} position={[-0.70, 0.46, -0.05]} color={C.couchCushion} />
+      <Box size={[0.62, 0.12, 0.70]} position={[0.00, 0.46, -0.05]} color={C.couchCushion} />
+      <Box size={[0.62, 0.12, 0.70]} position={[0.70, 0.46, -0.05]} color={C.couchCushion} />
+      {/* backrest body */}
+      <Box size={[2.20, 0.55, 0.20]} position={[0, 0.675, -0.45]} color={C.couchBody} />
+      {/* back cushions */}
+      <Box size={[0.62, 0.42, 0.14]} position={[-0.70, 0.66, -0.28]} color={C.couchCushion} />
+      <Box size={[0.62, 0.42, 0.14]} position={[0.00, 0.66, -0.28]} color={C.couchCushion} />
+      <Box size={[0.62, 0.42, 0.14]} position={[0.70, 0.66, -0.28]} color={C.couchCushion} />
+      {/* armrests */}
+      <Box size={[0.20, 0.55, 0.90]} position={[-1.00, 0.275, -0.10]} color={C.couchBody} />
+      <Box size={[0.20, 0.55, 0.90]} position={[1.00, 0.275, -0.10]} color={C.couchBody} />
+      {/* feet */}
+      <Cyl args={[0.05, 0.05, 0.06, 10]} position={[-0.98, 0.03, -0.40]} color={C.couchPiping} />
+      <Cyl args={[0.05, 0.05, 0.06, 10]} position={[0.98, 0.03, -0.40]} color={C.couchPiping} />
+      <Cyl args={[0.05, 0.05, 0.06, 10]} position={[-0.98, 0.03, 0.20]} color={C.couchPiping} />
+      <Cyl args={[0.05, 0.05, 0.06, 10]} position={[0.98, 0.03, 0.20]} color={C.couchPiping} />
+    </group>
+  )
+}
+
+export function Scene() {
   return (
     <>
       <Floor />
-      <BrickWall size={[8.2, 3, 0.2]} position={[0, 1.5, -2.5]} facing="z" />
-      <BrickWall size={[0.2, 3, 5.2]} position={[-4.1, 1.5, 0]} facing="x" />
-      <BackWallDecor />
-      <Counter />
-      <PendantLamp position={[-1.5, 2.5, -0.5]} />
-      <PendantLamp position={[1.0, 2.5, 0.5]} />
-      <PendantLamp position={[2.6, 2.5, -0.5]} />
-      <Table position={[1.8, 0, 1.2]} />
-      <Chair position={[2.45, 0, 1.2]} rotation={[0, -Math.PI / 2, 0]} />
-      <Chair position={[1.15, 0, 1.2]} rotation={[0, Math.PI / 2, 0]} />
-      <Table position={[-2.5, 0, 1.5]} />
-      <Chair position={[-2.5, 0, 0.85]} rotation={[0, 0, 0]} />
-      <Chair position={[-2.5, 0, 2.15]} rotation={[0, Math.PI, 0]} />
-      {showFrontWall && <FrontWall />}
-      <OutdoorSet />
-      <Lamppost position={[-6.0, 0, 3.5]} />
-      <Plant position={[-4.3, 0, 2.6]} size={1.2} />
-      <Plant position={[4.3, 0, -2.0]} size={1.0} leafColor={C.leafDark} />
-      <Plant position={[3.7, 0, 2.6]} size={0.9} />
-      <Plant position={[-3.0, 0, -2.0]} size={0.85} leafColor={C.leafDark} />
-      <Bicycle position={[-4.5, 0, 3.8]} />
+      <BrickWall size={[16.4, 6, 0.4]} position={[0, 3, -5.0]} facing="z" />
+      <BrickWall size={[0.4, 6, 10.4]} position={[-8.2, 3, 0]} facing="x" />
+      <Couch />
     </>
   )
 }

@@ -1,6 +1,8 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 
+RUN apk add --no-cache libc6-compat
+
 # NEXT_PUBLIC_* vars precisam estar disponíveis em build time (inlined no bundle client-side)
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -12,7 +14,7 @@ ENV NEXT_PUBLIC_LIVEKIT_URL=$NEXT_PUBLIC_LIVEKIT_URL
 ENV NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
 
 COPY package.json .
-RUN npm install
+RUN npm install --legacy-peer-deps
 COPY . .
 RUN npm run build
 

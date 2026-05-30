@@ -1,0 +1,7 @@
+FROM node:22-alpine
+WORKDIR /app
+COPY apps/ws-server/package.json .
+RUN npm install --production
+COPY apps/ws-server/src ./src
+EXPOSE 8080
+CMD ["node", "src/index.js"]

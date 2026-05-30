@@ -21,11 +21,13 @@ export async function connectVoice(url, token) {
   })
 
   // Anexa manualmente cada track de áudio remoto ao DOM — necessário para
-  // garantir playback em todos os browsers mesmo sem gesto explícito na track
-  room.on(RoomEvent.TrackSubscribed, (track) => {
+  // garantir playback em todos os browsers mesmo sem gesto explícito na track.
+  // data-identity armazena o userId do participante para o sistema de volume proximal.
+  room.on(RoomEvent.TrackSubscribed, (track, _pub, participant) => {
     if (track.kind !== Track.Kind.Audio) return
     const el = track.attach()
     el.setAttribute('data-livekit', 'audio')
+    el.setAttribute('data-identity', participant.identity)
     document.body.appendChild(el)
     el.play().catch(() => {})
   })
@@ -68,6 +70,13 @@ export function disconnectVoice() {
   room.disconnect()
   room = null
   document.querySelectorAll('[data-livekit="audio"]').forEach((el) => el.remove())
+}
+
+// Sets the playback volume (0–1) for a remote participant identified by their Supabase user ID.
+// Called from RemotePlayer.useFrame every frame — keep it cheap.
+export function setParticipantVolume(identity, volume) {
+  const el = document.querySelector(`[data-livekit="audio"][data-identity="${identity}"]`)
+  if (el) el.volume = Math.max(0, Math.min(1, volume))
 }
 
 export function onParticipantEvent(event, handler) {

@@ -136,10 +136,13 @@ function ParticipantPanel({ user }) {
   )
 }
 
+const ZONE_LABELS = { main: 'Café', lounge: 'Lounge' }
+
 function HUD({ room, onLeave, user }) {
   const self = useStore((s) => s.self)
   const rosterSize = useStore((s) => s.roster.size)
   const micEnabled = useStore((s) => s.micEnabled)
+  const zone = useStore((s) => s.zone)
 
   return (
     <>
@@ -162,6 +165,9 @@ function HUD({ room, onLeave, user }) {
         </div>
         <div style={{ opacity: 0.7 }}>
           sala: {room} · {rosterSize} outro(s)
+        </div>
+        <div style={{ opacity: 0.6, fontSize: 11 }}>
+          zona: {ZONE_LABELS[zone] ?? zone}
         </div>
       </div>
 

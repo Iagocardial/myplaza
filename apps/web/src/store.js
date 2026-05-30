@@ -9,4 +9,5 @@ export const useStore = create(() => ({
   nearSeat: false,
   sitting: false,
   standingUp: false,
+  zone: 'main',         // 'main' | 'lounge' — current audio zone of the local player
 }))

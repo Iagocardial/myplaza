@@ -30,10 +30,11 @@ export function connect({ room = 'lobby', user, wsUrl } = {}) {
   if (socket) return socket
 
   const url = `${resolveWsUrl(wsUrl)}?room=${encodeURIComponent(room)}`
-  socket = new WebSocket(url)
+  const ws = new WebSocket(url)
+  socket = ws
 
-  socket.addEventListener('open', () => {
-    socket.send(JSON.stringify({
+  ws.addEventListener('open', () => {
+    ws.send(JSON.stringify({
       t: 'hello',
       userId: user.id,
       name: user.name,
@@ -41,21 +42,25 @@ export function connect({ room = 'lobby', user, wsUrl } = {}) {
     }))
   })
 
-  socket.addEventListener('message', (event) => {
+  ws.addEventListener('message', (event) => {
     let msg
     try { msg = JSON.parse(event.data) } catch { return }
     handle(msg)
   })
 
-  socket.addEventListener('close', () => {
+  ws.addEventListener('close', () => {
     handlers.reset()
+    // Guard: only clear state if this ws is still the active socket.
+    // Without this, a stale close event from a previous session fires after
+    // a new socket is already connected and wipes the new session's roster.
+    if (socket !== ws) return
     useStore.setState((s) => ({ self: { ...s.self, id: null }, roster: new Map() }))
     socket = null
   })
 
-  socket.addEventListener('error', () => socket?.close())
+  ws.addEventListener('error', () => ws.close())
 
-  return socket
+  return ws
 }
 
 function handle(msg) {
@@ -138,6 +143,7 @@ export function sendSit(sitting) {
 
 export function disconnectWS() {
   if (!socket) return
-  socket.close()
-  socket = null
+  const ws = socket
+  socket = null  // clear first so the close handler sees socket !== ws and skips
+  ws.close()
 }

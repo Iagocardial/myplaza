@@ -7,6 +7,8 @@ import * as THREE from 'three'
 import { useStore } from '@/store'
 import { positions } from '@/positions'
 import { sendMove } from '@/lib/net'
+import { setParticipantVolume } from '@/lib/livekit-voice'
+import { localPos, computeVolume, getLocalZone } from '@/proximity'
 import { SEAT_POS, SEAT_HEADING, EXIT_POS, INTERACT_RADIUS, COUCH_BOX, PLAYER_RADIUS } from '@/seat'
 
 const SPEED = 3.36
@@ -258,6 +260,7 @@ export function LocalPlayer({ ref, userId }) {
   const movingRef = useRef(false)
   const nearSeatRef = useRef(false)
   const wasLockedRef = useRef(false)
+  const zoneRef = useRef('main')
   const [moving, setMoving] = useState(false)
   const sitting = useStore((s) => s.sitting)
   const standingUp = useStore((s) => s.standingUp)
@@ -323,6 +326,17 @@ export function LocalPlayer({ ref, userId }) {
       useStore.setState({ nearSeat: near })
     }
 
+    // Keep localPos in sync so RemotePlayer and computeVolume can read it without Zustand.
+    localPos.x = group.position.x
+    localPos.z = group.position.z
+
+    // Update zone in store only on change (avoids per-frame Zustand writes).
+    const newZone = getLocalZone()
+    if (newZone.id !== zoneRef.current) {
+      zoneRef.current = newZone.id
+      useStore.setState({ zone: newZone.id })
+    }
+
     sendMove(group.position.x, group.position.z, headingRef.current)
   })
 
@@ -338,6 +352,7 @@ export function RemotePlayer({ player }) {
   const lastXRef = useRef(0)
   const lastZRef = useRef(0)
   const movingRef = useRef(false)
+  const volumeRef = useRef(0)
   const [moving, setMoving] = useState(false)
 
   useFrame((_, delta) => {
@@ -363,6 +378,11 @@ export function RemotePlayer({ player }) {
       movingRef.current = isMoving
       setMoving(isMoving)
     }
+
+    // Proximity audio: lerp toward target volume to smooth zone transitions.
+    const targetVol = computeVolume(p.x, p.z)
+    volumeRef.current += (targetVol - volumeRef.current) * Math.min(1, delta * 5)
+    setParticipantVolume(player.userId, volumeRef.current)
   })
 
   return (

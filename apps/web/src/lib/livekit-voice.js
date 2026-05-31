@@ -20,14 +20,14 @@ export async function connectVoice(url, token) {
     },
   })
 
-  // Anexa manualmente cada track de áudio remoto ao DOM — necessário para
-  // garantir playback em todos os browsers mesmo sem gesto explícito na track.
-  // data-identity armazena o userId do participante para o sistema de volume proximal.
-  room.on(RoomEvent.TrackSubscribed, (track, _pub, participant) => {
+  // Attach DOM elements only to trigger browser autoplay policy bypass.
+  // IMPORTANT: el.volume has zero effect in LiveKit SDK v2.x because the SDK
+  // routes audio through WebAudio (AudioContext), not through the HTML element.
+  // Volume must be controlled via participant.setVolume() — see setParticipantVolume().
+  room.on(RoomEvent.TrackSubscribed, (track, _pub, _participant) => {
     if (track.kind !== Track.Kind.Audio) return
     const el = track.attach()
     el.setAttribute('data-livekit', 'audio')
-    el.setAttribute('data-identity', participant.identity)
     document.body.appendChild(el)
     el.play().catch(() => {})
   })
@@ -37,7 +37,7 @@ export async function connectVoice(url, token) {
     track.detach().forEach((el) => el.remove())
   })
 
-  // startAudio deve ser chamado antes do connect para ficar no contexto de gesto do usuário
+  // startAudio initialises the AudioContext — must be called within a user gesture.
   room.startAudio().catch(() => {})
 
   await room.connect(url, token)
@@ -72,11 +72,16 @@ export function disconnectVoice() {
   document.querySelectorAll('[data-livekit="audio"]').forEach((el) => el.remove())
 }
 
-// Sets the playback volume (0–1) for a remote participant identified by their Supabase user ID.
-// Called from RemotePlayer.useFrame every frame — keep it cheap.
+// Controls playback volume (0–1) for a remote participant identified by their LiveKit identity
+// (= Supabase user ID). In SDK v2.x, room.remoteParticipants is keyed by identity directly.
+// participant.setVolume() drives the WebAudio gain node — the only API that actually works
+// when the AudioContext pipeline is active.
 export function setParticipantVolume(identity, volume) {
-  const el = document.querySelector(`[data-livekit="audio"][data-identity="${identity}"]`)
-  if (el) el.volume = Math.max(0, Math.min(1, volume))
+  if (!room) return
+  const participant = room.remoteParticipants.get(identity)
+  if (participant) {
+    participant.setVolume(Math.max(0, Math.min(1, volume)))
+  }
 }
 
 export function onParticipantEvent(event, handler) {

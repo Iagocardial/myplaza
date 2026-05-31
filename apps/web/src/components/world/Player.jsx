@@ -379,9 +379,11 @@ export function RemotePlayer({ player }) {
       setMoving(isMoving)
     }
 
-    // Proximity audio: lerp toward target volume to smooth zone transitions.
+    // Volume control: fast convergence when muting (zone isolation) or reaching
+    // full volume (entering private zone); slow for open-floor proximity fade.
     const targetVol = computeVolume(p.x, p.z)
-    volumeRef.current += (targetVol - volumeRef.current) * Math.min(1, delta * 5)
+    const speed = targetVol === 0 || targetVol === 1.0 ? 20 : 6
+    volumeRef.current += (targetVol - volumeRef.current) * Math.min(1, delta * speed)
     setParticipantVolume(player.userId, volumeRef.current)
   })
 

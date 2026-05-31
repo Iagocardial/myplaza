@@ -5,15 +5,21 @@ export const localPos = { x: 0, z: 1 }
 
 // Zone definitions — order matters, first match wins.
 //
-// main  → open café floor: everyone in the same zone hears each other up to ~5.5 units
-// lounge → intimate corner near the couch: hearing drops off after ~2 units
-const LOUNGE_RADIUS = 1.8
+// private: true  → Gather-style private space: everyone inside hears everyone else at full volume.
+//                  Players outside the zone can only hear in at very close range (CROSS_ZONE_RANGE).
+// private: false → Standard distance-based falloff using maxRange.
+//
+// shape is exported so the renderer can draw zone floor markers without duplicating coordinates.
 
-const ZONES = [
+const LOUNGE_RADIUS = 1.8
+const MTG = { x1: 2.5, z1: -4.5, x2: 6.8, z2: -2.0 }
+
+export const ZONES = [
   {
     id: 'lounge',
     label: 'Lounge',
-    maxRange: 2.0,
+    private: true,
+    shape: { type: 'circle', cx: COUCH_POS.x, cz: COUCH_POS.z, r: LOUNGE_RADIUS },
     test: (x, z) => {
       const dx = x - COUCH_POS.x
       const dz = z - COUCH_POS.z
@@ -21,14 +27,22 @@ const ZONES = [
     },
   },
   {
+    id: 'meeting',
+    label: 'Reunião',
+    private: true,
+    shape: { type: 'rect', x1: MTG.x1, z1: MTG.z1, x2: MTG.x2, z2: MTG.z2 },
+    test: (x, z) => x >= MTG.x1 && x <= MTG.x2 && z >= MTG.z1 && z <= MTG.z2,
+  },
+  {
     id: 'main',
     label: 'Café',
+    private: false,
     maxRange: 5.5,
     test: () => true,
   },
 ]
 
-// Minimum distance required to hear someone in a different zone.
+// Range at which players from different zones can still faintly hear each other (zone boundary bleed).
 const CROSS_ZONE_RANGE = 1.0
 
 function getZone(x, z) {
@@ -44,12 +58,24 @@ function smoothstep(t) {
 }
 
 // Returns 0.0–1.0 target volume for a remote player at (remoteX, remoteZ).
-// Same zone → zone's maxRange used. Different zones → CROSS_ZONE_RANGE.
+// Called from RemotePlayer.useFrame every frame — keep it cheap.
 export function computeVolume(remoteX, remoteZ) {
   const lZone = getZone(localPos.x, localPos.z)
   const rZone = getZone(remoteX, remoteZ)
+
+  // Same private zone → full volume regardless of distance (Gather private-space behavior).
+  if (lZone.id === rZone.id && lZone.private) return 1.0
+
   const dist = Math.hypot(remoteX - localPos.x, remoteZ - localPos.z)
-  const maxRange = lZone.id === rZone.id ? lZone.maxRange : CROSS_ZONE_RANGE
+
+  // Different zones → audible only at very close range near the boundary.
+  if (lZone.id !== rZone.id) {
+    if (dist >= CROSS_ZONE_RANGE) return 0
+    return 1 - smoothstep(dist / CROSS_ZONE_RANGE)
+  }
+
+  // Same non-private zone → standard distance falloff.
+  const maxRange = lZone.maxRange ?? 5.5
   if (dist >= maxRange) return 0
   return 1 - smoothstep(dist / maxRange)
 }

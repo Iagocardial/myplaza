@@ -4,6 +4,7 @@ import { OrthographicCamera, ContactShadows } from '@react-three/drei'
 import { useLayoutEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { COUCH_POS } from '@/seat'
+import { ZONES } from '@/proximity'
 
 const C = {
   brick: '#c8775a', brickDark: '#a35a3f', mortar: '#7a3f2c',
@@ -444,6 +445,68 @@ function Couch() {
   )
 }
 
+// Renders a translucent floor fill + visible border for one private zone.
+function ZoneFill({ zone }) {
+  const { shape } = zone
+  if (shape.type === 'circle') {
+    return (
+      <group>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[shape.cx, 0.003, shape.cz]}>
+          <circleGeometry args={[shape.r, 48]} />
+          <meshBasicMaterial color="#f4c95a" transparent opacity={0.09} depthWrite={false} />
+        </mesh>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[shape.cx, 0.004, shape.cz]}>
+          <ringGeometry args={[shape.r - 0.08, shape.r + 0.08, 48]} />
+          <meshBasicMaterial color="#f4c95a" transparent opacity={0.55} depthWrite={false} />
+        </mesh>
+      </group>
+    )
+  }
+  if (shape.type === 'rect') {
+    const { x1, z1, x2, z2 } = shape
+    const cx = (x1 + x2) / 2
+    const cz = (z1 + z2) / 2
+    const w = x2 - x1
+    const d = z2 - z1
+    const b = 0.1
+    return (
+      <group>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, 0.003, cz]}>
+          <planeGeometry args={[w, d]} />
+          <meshBasicMaterial color="#f4c95a" transparent opacity={0.08} depthWrite={false} />
+        </mesh>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, 0.004, z1]}>
+          <planeGeometry args={[w, b]} />
+          <meshBasicMaterial color="#f4c95a" transparent opacity={0.6} depthWrite={false} />
+        </mesh>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[cx, 0.004, z2]}>
+          <planeGeometry args={[w, b]} />
+          <meshBasicMaterial color="#f4c95a" transparent opacity={0.6} depthWrite={false} />
+        </mesh>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[x1, 0.004, cz]}>
+          <planeGeometry args={[b, d]} />
+          <meshBasicMaterial color="#f4c95a" transparent opacity={0.6} depthWrite={false} />
+        </mesh>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[x2, 0.004, cz]}>
+          <planeGeometry args={[b, d]} />
+          <meshBasicMaterial color="#f4c95a" transparent opacity={0.6} depthWrite={false} />
+        </mesh>
+      </group>
+    )
+  }
+  return null
+}
+
+function ZoneMarkers() {
+  return (
+    <>
+      {ZONES.filter((z) => z.private).map((zone) => (
+        <ZoneFill key={zone.id} zone={zone} />
+      ))}
+    </>
+  )
+}
+
 export function Scene() {
   return (
     <>
@@ -451,6 +514,17 @@ export function Scene() {
       <BrickWall size={[16.4, 6, 0.4]} position={[0, 3, -5.0]} facing="z" />
       <BrickWall size={[0.4, 6, 10.4]} position={[-8.2, 3, 0]} facing="x" />
       <Couch />
+      <ZoneMarkers />
+      {/* Meeting area furniture */}
+      <Table position={[3.8, 0, -3.2]} />
+      <Chair position={[3.8, 0, -2.5]} rotation={[0, Math.PI, 0]} />
+      <Chair position={[3.8, 0, -3.9]} />
+      <Chair position={[3.1, 0, -3.2]} rotation={[0, Math.PI / 2, 0]} />
+      <Chair position={[4.5, 0, -3.2]} rotation={[0, -Math.PI / 2, 0]} />
+      <Table position={[5.8, 0, -3.5]} />
+      <Chair position={[5.8, 0, -2.8]} rotation={[0, Math.PI, 0]} />
+      <Chair position={[5.8, 0, -4.2]} />
+      <PendantLamp position={[4.6, 2.6, -3.4]} />
     </>
   )
 }

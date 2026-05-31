@@ -9,6 +9,7 @@ import { useKeyboardControls } from '@/controls'
 import { connect, disconnectWS, sendSit } from '@/lib/net'
 import { connectVoice, setMicEnabled, disconnectVoice, onActiveSpeakersChanged } from '@/lib/livekit-voice'
 import { useStore } from '@/store'
+import { ZONES } from '@/proximity'
 
 const CAM_OFFSET = new THREE.Vector3(16, 16, 16)
 const _desired = new THREE.Vector3()
@@ -136,13 +137,12 @@ function ParticipantPanel({ user }) {
   )
 }
 
-const ZONE_LABELS = { main: 'Café', lounge: 'Lounge' }
-
 function HUD({ room, onLeave, user }) {
   const self = useStore((s) => s.self)
   const rosterSize = useStore((s) => s.roster.size)
   const micEnabled = useStore((s) => s.micEnabled)
   const zone = useStore((s) => s.zone)
+  const zoneObj = ZONES.find((z) => z.id === zone)
 
   return (
     <>
@@ -166,8 +166,16 @@ function HUD({ room, onLeave, user }) {
         <div style={{ opacity: 0.7 }}>
           sala: {room} · {rosterSize} outro(s)
         </div>
-        <div style={{ opacity: 0.6, fontSize: 11 }}>
-          zona: {ZONE_LABELS[zone] ?? zone}
+        <div style={{ opacity: 0.7, fontSize: 11, display: 'flex', alignItems: 'center', gap: 5 }}>
+          zona: {zoneObj?.label ?? zone}
+          {zoneObj?.private && (
+            <span style={{
+              background: '#f4c95a', color: '#3a2014', borderRadius: 4,
+              padding: '0 5px', fontSize: 9, fontWeight: 700, letterSpacing: 0.3,
+            }}>
+              PRIVADA
+            </span>
+          )}
         </div>
       </div>
 

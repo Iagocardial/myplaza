@@ -13,7 +13,7 @@ import { SEAT_POS, SEAT_HEADING, EXIT_POS, INTERACT_RADIUS, COUCH_BOX, PLAYER_RA
 
 const SPEED = 3.36
 const INV_SQRT2 = 1 / Math.SQRT2
-const BOUNDS = { xMin: -7.4, xMax: 7.4, zMin: -4.6, zMax: 4.4 }
+const BOUNDS = { xMin: -13.5, xMax: 13.5, zMin: -11.5, zMax: 4.0 }
 const LERP_PER_SEC = 10
 const TWO_PI = Math.PI * 2
 

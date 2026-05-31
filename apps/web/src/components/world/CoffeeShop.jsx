@@ -65,8 +65,8 @@ export function Lights() {
 
 function Floor() {
   return (
-    <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-      <planeGeometry args={[18, 12]} />
+    <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -4]}>
+      <planeGeometry args={[32, 22]} />
       <meshStandardMaterial color={C.woodFloor} roughness={0.7} />
     </mesh>
   )
@@ -124,7 +124,7 @@ function BrickWall({ size = [8, 3, 0.2], position = [0, 1.5, 0], rotation = [0, 
 
 function BackWallDecor() {
   return (
-    <group position={[0, 0, -2.38]}>
+    <group position={[0, 0, -11.62]}>
       <group position={[-2.4, 2.0, 0]}>
         <Box size={[1.8, 1.2, 0.05]} color={C.woodDark} />
         <Box size={[1.55, 0.95, 0.02]} position={[0, 0, 0.04]} color={C.chalk} />
@@ -445,6 +445,36 @@ function Couch() {
   )
 }
 
+function WorkDesk({ position = [0, 0, 0], rotation = [0, 0, 0] }) {
+  return (
+    <group position={position} rotation={rotation}>
+      {/* desk top */}
+      <Box size={[1.1, 0.04, 0.65]} position={[0, 0.74, 0]} color={C.wood} />
+      {/* legs */}
+      {[[-0.5, -0.29], [0.5, -0.29], [-0.5, 0.29], [0.5, 0.29]].map(([x, z], i) => (
+        <Box key={i} size={[0.04, 0.74, 0.04]} position={[x, 0.37, z]} color={C.woodDark} />
+      ))}
+      {/* laptop base */}
+      <Box size={[0.5, 0.02, 0.34]} position={[0, 0.77, 0.02]} color="#1a1a1a" />
+      {/* laptop screen — hinged at the back edge of the base, tilted open toward user (+z) */}
+      <group position={[0, 0.77, -0.15]} rotation={[-1.1, 0, 0]}>
+        <Box size={[0.5, 0.32, 0.015]} position={[0, 0.16, 0]} color="#1a1a1a" />
+        <Box size={[0.46, 0.28, 0.004]} position={[0, 0.16, 0.009]} color="#0a2a4a" />
+      </group>
+      {/* coffee cup */}
+      <Cyl args={[0.055, 0.045, 0.09, 14]} position={[0.38, 0.795, 0.14]} color={C.white} />
+      <Cyl args={[0.05, 0.04, 0.018, 14]} position={[0.38, 0.828, 0.14]} color={C.coffee} />
+      {/* notepad + pen */}
+      <Box size={[0.24, 0.005, 0.18]} position={[-0.34, 0.763, 0.12]} color="#f0ede8" />
+      <Box size={[0.22, 0.003, 0.005]} position={[-0.34, 0.769, 0.05]} color="#ccc" />
+      <Box size={[0.22, 0.003, 0.005]} position={[-0.34, 0.769, 0.09]} color="#ccc" />
+      <Box size={[0.008, 0.003, 0.22]} position={[-0.2, 0.769, 0.12]} color="#e05a3a" />
+      {/* chair facing the desk (user looks toward local -z) */}
+      <Chair position={[0, 0, 0.62]} rotation={[0, Math.PI, 0]} color={C.woodDark} />
+    </group>
+  )
+}
+
 // Renders a translucent floor fill + visible border for one private zone.
 function ZoneFill({ zone }) {
   const { shape } = zone
@@ -511,20 +541,61 @@ export function Scene() {
   return (
     <>
       <Floor />
-      <BrickWall size={[16.4, 6, 0.4]} position={[0, 3, -5.0]} facing="z" />
-      <BrickWall size={[0.4, 6, 10.4]} position={[-8.2, 3, 0]} facing="x" />
+
+      {/* Walls — expanded café */}
+      <BrickWall size={[28.4, 6, 0.4]} position={[0, 3, -12.0]} facing="z" />
+      <BrickWall size={[0.4, 6, 20.4]} position={[-14.2, 3, -4.5]} facing="x" />
+      <BrickWall size={[0.4, 6, 20.4]} position={[14.2, 3, -4.5]} facing="x" />
+
+      {/* Lounge corner — sofá + decoração */}
       <Couch />
+      <Plant position={[-11.5, 0, -10.5]} size={1.1} />
+      <PendantLamp position={[-9.0, 2.6, -8.0]} />
+
+      {/* Counter e iluminação do balcão */}
+      <Counter />
+      <BackWallDecor />
+      <PendantLamp position={[-1.5, 2.6, -1.2]} />
+      <PendantLamp position={[1.0, 2.6, -0.5]} />
+
+      {/* Mesas sociais na área principal */}
+      <Table position={[-4.5, 0, -2.5]} />
+      <Chair position={[-4.5, 0, -1.8]} rotation={[0, Math.PI, 0]} />
+      <Chair position={[-4.5, 0, -3.2]} />
+      <Chair position={[-5.2, 0, -2.5]} rotation={[0, Math.PI / 2, 0]} />
+
+      <Table position={[0, 0, -5.5]} />
+      <Chair position={[0, 0, -4.8]} rotation={[0, Math.PI, 0]} />
+      <Chair position={[0, 0, -6.2]} />
+      <Chair position={[-0.7, 0, -5.5]} rotation={[0, Math.PI / 2, 0]} />
+      <Chair position={[0.7, 0, -5.5]} rotation={[0, -Math.PI / 2, 0]} />
+
+      <Plant position={[4.5, 0, -1.0]} size={0.9} />
+      <Plant position={[-13.0, 0, -2.0]} size={0.85} />
+      <Plant position={[13.0, 0, -9.0]} size={0.9} leafColor={C.leafDark} />
+
+      {/* Mesas individuais — fileira do fundo (zonas privadas) */}
+      <WorkDesk position={[-4, 0, -9.5]} />
+      <PendantLamp position={[-4, 2.6, -9.5]} />
+
+      <WorkDesk position={[0, 0, -9.5]} />
+      <PendantLamp position={[0, 2.6, -9.5]} />
+
+      <WorkDesk position={[5, 0, -9.5]} />
+      <PendantLamp position={[5, 2.6, -9.5]} />
+
+      <WorkDesk position={[9.5, 0, -9.5]} />
+      <PendantLamp position={[9.5, 2.6, -9.5]} />
+
+      {/* Mesas individuais — parede direita (zonas privadas) */}
+      <WorkDesk position={[12.8, 0, -6.0]} rotation={[0, -Math.PI / 2, 0]} />
+      <PendantLamp position={[12.8, 2.6, -6.0]} />
+
+      <WorkDesk position={[12.8, 0, -2.0]} rotation={[0, -Math.PI / 2, 0]} />
+      <PendantLamp position={[12.8, 2.6, -2.0]} />
+
+      {/* Marcadores de zona no chão */}
       <ZoneMarkers />
-      {/* Meeting area furniture */}
-      <Table position={[3.8, 0, -3.2]} />
-      <Chair position={[3.8, 0, -2.5]} rotation={[0, Math.PI, 0]} />
-      <Chair position={[3.8, 0, -3.9]} />
-      <Chair position={[3.1, 0, -3.2]} rotation={[0, Math.PI / 2, 0]} />
-      <Chair position={[4.5, 0, -3.2]} rotation={[0, -Math.PI / 2, 0]} />
-      <Table position={[5.8, 0, -3.5]} />
-      <Chair position={[5.8, 0, -2.8]} rotation={[0, Math.PI, 0]} />
-      <Chair position={[5.8, 0, -4.2]} />
-      <PendantLamp position={[4.6, 2.6, -3.4]} />
     </>
   )
 }

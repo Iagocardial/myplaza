@@ -137,6 +137,24 @@ function ParticipantPanel({ user }) {
   )
 }
 
+function ZoneFocusOverlay() {
+  const zone = useStore((s) => s.zone)
+  const zoneObj = ZONES.find((z) => z.id === zone)
+  const isPrivate = zoneObj?.private ?? false
+
+  return (
+    <div
+      style={{
+        position: 'absolute', inset: 0,
+        background: 'radial-gradient(ellipse at center, rgba(20,12,6,0) 30%, rgba(20,12,6,0.55) 100%)',
+        opacity: isPrivate ? 1 : 0,
+        transition: 'opacity 0.55s ease',
+        pointerEvents: 'none',
+      }}
+    />
+  )
+}
+
 function HUD({ room, onLeave, user }) {
   const self = useStore((s) => s.self)
   const rosterSize = useStore((s) => s.roster.size)
@@ -320,7 +338,7 @@ export default function WorldClient({ room, roomName, user, livekitUrl, livekitT
 
       <div
         style={{
-          width: '100vw', height: '100vh',
+          width: '100vw', height: '100vh', position: 'relative',
           background: 'linear-gradient(180deg, #fbe6c2 0%, #f5cf9a 55%, #e2a872 100%)',
           visibility: entered ? 'visible' : 'hidden',
         }}
@@ -333,6 +351,8 @@ export default function WorldClient({ room, roomName, user, livekitUrl, livekitT
           <RemotePlayers />
           <ContactShadows position={[0, 0.025, 0]} opacity={0.45} scale={30} blur={2.4} far={10} />
         </Canvas>
+
+        <ZoneFocusOverlay />
 
         {entered && <HUD room={room} onLeave={leave} user={user} />}
       </div>
